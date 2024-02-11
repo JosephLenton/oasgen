@@ -1,5 +1,5 @@
 use std::borrow::Borrow;
-use std::sync::{Arc};
+use std::sync::Arc;
 use axum::handler::Handler;
 use axum::routing;
 use futures::future::{Ready, ok};
@@ -7,9 +7,9 @@ use http::Method;
 use indexmap::IndexMap;
 use openapiv3::OpenAPI;
 use axum::routing::MethodRouter;
-use axum::body::{Body, Full};
+use axum::body::Body;
 
-use oasgen_core::{OaSchema};
+use oasgen_core::OaSchema;
 
 use crate::Format;
 
@@ -47,7 +47,7 @@ impl<S> Server<Router<S>, OpenAPI>
 
     pub fn get<F, T>(mut self, path: &str, handler: F) -> Self
         where
-            F: Handler<T, S, Body>,
+            F: Handler<T, S>,
             T: 'static,
             F: Copy + Send,
     {
@@ -58,7 +58,7 @@ impl<S> Server<Router<S>, OpenAPI>
 
     pub fn post<F, T>(mut self, path: &str, handler: F) -> Self
         where
-            F: Handler<T, S, Body>,
+            F: Handler<T, S>,
             T: 'static,
             F: Copy + Send,
     {
@@ -69,7 +69,7 @@ impl<S> Server<Router<S>, OpenAPI>
 
     pub fn put<F, T>(mut self, path: &str, handler: F) -> Self
         where
-            F: Handler<T, S, Body>,
+            F: Handler<T, S>,
             T: 'static,
             F: Copy + Send,
     {
@@ -120,18 +120,17 @@ impl<S> Server<Router<S>, Arc<OpenAPI>>
 
         #[cfg(feature = "swagger-ui")]
         if let Some(mut path) = self.swagger_ui_route {
-
             let swagger = self.swagger_ui.expect("Swagger UI route set but no Swagger UI is configured.");
             let handler = routing::get(|uri: http::Uri| async move {
                 match swagger.handle_url(&uri) {
                     Some(response) => {
                         let (headers, body) = response.into_parts();
-                        axum::response::Response::from_parts(headers, axum::body::boxed(Full::from(body)))
+                        axum::response::Response::from_parts(headers, axum::body::Body::new(body))
                     }
                     None => {
                         axum::response::Response::builder()
                             .status(http::StatusCode::NOT_FOUND)
-                            .body(axum::body::boxed(Body::empty()))
+                            .body(axum::body::Body::empty())
                             .unwrap()
                     }
                 }
